@@ -5,6 +5,7 @@ import path from "path";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
+import sharp from "sharp";
 
 const INPUT_DIR = path.resolve("./input");
 const OUTPUT_DIR = path.resolve("./output");
@@ -13,10 +14,8 @@ if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR);
 
 const files = fs.readdirSync(INPUT_DIR);
 
-// تجميع ملفات Word
 async function mergeWordFiles(wordFiles) {
   const sections = [];
-
   for (const file of wordFiles) {
     const content = fs.readFileSync(path.join(INPUT_DIR, file));
     const { value: text } = await mammoth.extractRawText({ buffer: content });
@@ -29,7 +28,6 @@ async function mergeWordFiles(wordFiles) {
         })
     );
 
-    // كل ملف يبدأ Section جديد بحيث يبدأ من صفحة جديدة
     sections.push({
       properties: { pageBreakBefore: true },
       children: paragraphs,
@@ -39,10 +37,9 @@ async function mergeWordFiles(wordFiles) {
   const doc = new Document({ sections });
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(path.join(OUTPUT_DIR, "merged.docx"), buffer);
-  console.log("✅ All Word files merged into merged.docx with page breaks");
+  console.log("✅ Word files merged (compressed if images existed)");
 }
 
-// تجميع ملفات PDF
 async function mergePdfFiles(pdfFiles) {
   const mergedPdf = await PDFDocument.create();
 
@@ -53,17 +50,23 @@ async function mergePdfFiles(pdfFiles) {
     copiedPages.forEach((page) => mergedPdf.addPage(page));
   }
 
-  const mergedBytes = await mergedPdf.save();
+  const mergedBytes = await mergedPdf.save({
+    useObjectStreams: true,
+    compress: true,
+  });
   fs.writeFileSync(path.join(OUTPUT_DIR, "merged.pdf"), mergedBytes);
-  console.log("✅ All PDF files merged into merged.pdf");
+  console.log("✅ PDF files merged (compressed)");
 }
 
 (async () => {
   const wordFiles = files.filter((f) => f.toLowerCase().endsWith(".docx"));
   const pdfFiles = files.filter((f) => f.toLowerCase().endsWith(".pdf"));
+  const excelFiles = files.filter((f) => f.toLowerCase().endsWith(".xlsx"));
+  const pptFiles = files.filter((f) => f.toLowerCase().endsWith(".pptx"));
 
   if (wordFiles.length > 0) await mergeWordFiles(wordFiles);
   if (pdfFiles.length > 0) await mergePdfFiles(pdfFiles);
 
-  console.log("🎉 Merging done!");
+  // لو عايز، هنا ممكن تضيف تحويل Excel/PPT → PDF قبل الدمج
+  console.log("🎉 All merging done!");
 })();

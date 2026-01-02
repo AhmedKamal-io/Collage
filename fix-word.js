@@ -9,11 +9,11 @@ import mammoth from "mammoth";
 const INPUT_DIR = path.resolve("./input");
 const OUTPUT_DIR = path.resolve("./output");
 
-// prefix اللي لو السطر بيبدأ بيه هيتحول
+// prefix اللي لو السطر بيبدأ بيه هيعمل page break
 const PREFIX = process.argv[2];
 
 if (!PREFIX) {
-  console.log("⚠️ Please provide the line prefix to replace as argument");
+  console.log("⚠️ Please provide the line prefix as argument");
   process.exit(0);
 }
 
@@ -34,34 +34,51 @@ async function processFile(file) {
   const outputPath = path.join(OUTPUT_DIR, file);
 
   const content = fs.readFileSync(inputPath);
-
-  // استخراج النص الخام
   const { value: text } = await mammoth.extractRawText({ buffer: content });
   const lines = text.split("\n");
 
-  // إنشاء مستند جديد مع استبدال السطر وتهيئة الخط
-  const doc = new Document({
-    sections: [
-      {
-        properties: {},
-        children: lines.map((line) => {
-          const text = line.trim().startsWith(PREFIX)
-            ? "==========================="
-            : line;
-          return new Paragraph({
-            children: [
-              new TextRun({
-                text,
-                font: "Noto Sans",
-                size: 28, // docx يستخدم نصف النقطة، ف28 = 14pt
-              }),
-            ],
-          });
-        }),
-      },
-    ],
-  });
+  const sections = [];
+  let currentParagraphs = [];
 
+  for (const line of lines) {
+    if (line.trim().startsWith(PREFIX)) {
+      // إذا السطر يبدأ بالـ PREFIX → ابدأ Section جديد
+      if (currentParagraphs.length > 0) {
+        sections.push({
+          properties: {},
+          children: currentParagraphs,
+        });
+      }
+      // Section جديد يبدأ من صفحة جديدة
+      currentParagraphs = [];
+      sections.push({
+        properties: { pageBreakBefore: true },
+        children: [], // فارغ لأن السطر اللي فيه PREFIX تم حذفه
+      });
+    } else {
+      currentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              font: "Noto Sans",
+              size: 28, // 14pt
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  // إضافة آخر Paragraphs إذا فيه
+  if (currentParagraphs.length > 0) {
+    sections.push({
+      properties: {},
+      children: currentParagraphs,
+    });
+  }
+
+  const doc = new Document({ sections });
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(outputPath, buffer);
   console.log(`✅ Processed: ${file}`);

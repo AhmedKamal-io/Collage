@@ -2,13 +2,13 @@
   "name": "collage-scripts",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/AhmedKamal-io/Collage-scripts#readme",
+  "homepage": "https://github.com/AhmedKamal-io/Collage#readme",
   "bugs": {
-    "url": "https://github.com/AhmedKamal-io/Collage-scripts/issues"
+    "url": "https://github.com/AhmedKamal-io/Collage/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AhmedKamal-io/Collage-scripts.git"
+    "url": "git+https://github.com/AhmedKamal-io/Collage.git"
   },
   "license": "ISC",
   "author": "Ahmed Kamal",
@@ -22,14 +22,17 @@
     "docx": "^9.5.1",
     "docx-pdf": "^0.0.1",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "fs": "0.0.1-security",
     "install": "^0.13.0",
-    "lz-string": "^1.5.0",
     "mammoth": "^1.11.0",
     "node-fetch": "^3.3.2",
     "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
+    "pdf-poppler": "^0.2.3",
+    "potrace": "^2.1.8",
+    "pptx2pdf": "^1.0.10",
     "sharp": "^0.34.5"
   }
 }
